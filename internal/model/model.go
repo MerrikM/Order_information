@@ -2,6 +2,14 @@ package model
 
 import "time"
 
+type FullOrder struct {
+	Order         *Order         `json:"order,omitempty"`
+	Delivery      *Delivery      `json:"delivery,omitempty"`
+	Payment       *Payment       `json:"payment,omitempty"`
+	Items         []Item         `json:"items,omitempty"`
+	OrderMetadata *OrderMetadata `json:"order_metadata,omitempty"`
+}
+
 type Order struct {
 	OrderUID        string    `db:"order_uid" json:"order_uid"`
 	TrackNumber     string    `db:"track_number" json:"track_number"`
@@ -26,27 +34,24 @@ type Delivery struct {
 }
 
 type Payment struct {
-	ID           int    `db:"id" json:"id"`
-	OrderUID     string `db:"order_uid" json:"order_uid"`
 	Transaction  string `db:"transaction" json:"transaction"`
 	RequestID    string `db:"request_id" json:"request_id"`
 	Currency     string `db:"currency" json:"currency"`
 	Provider     string `db:"provider" json:"provider"`
 	Amount       int    `db:"amount" json:"amount"`
-	PaymentDt    int64  `db:"payment_dt" json:"payment_dt"`
+	PaymentDT    int64  `db:"payment_dt" json:"payment_dt"`
 	Bank         string `db:"bank" json:"bank"`
 	DeliveryCost int    `db:"delivery_cost" json:"delivery_cost"`
 	GoodsTotal   int    `db:"goods_total" json:"goods_total"`
 	CustomFee    int    `db:"custom_fee" json:"custom_fee"`
+	OrderUID     string `db:"order_uid" json:"-"`
 }
 
 type Item struct {
-	ID          int    `db:"id" json:"id"`
-	OrderUID    string `db:"order_uid" json:"order_uid"`
 	ChrtID      int64  `db:"chrt_id" json:"chrt_id"`
 	TrackNumber string `db:"track_number" json:"track_number"`
 	Price       int    `db:"price" json:"price"`
-	Rid         string `db:"rid" json:"rid"`
+	RID         string `db:"rid" json:"rid"`
 	Name        string `db:"name" json:"name"`
 	Sale        int    `db:"sale" json:"sale"`
 	Size        string `db:"size" json:"size"`
@@ -54,6 +59,7 @@ type Item struct {
 	NmID        int64  `db:"nm_id" json:"nm_id"`
 	Brand       string `db:"brand" json:"brand"`
 	Status      int    `db:"status" json:"status"`
+	OrderUID    string `db:"order_uid" json:"-"`
 }
 
 type OrderMetadata struct {

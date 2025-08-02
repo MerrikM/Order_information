@@ -21,35 +21,34 @@ CREATE TABLE IF NOT EXISTS deliveries (
     email TEXT
 );
 
-CREATE TABLE IF NOT EXISTS payments (
-  id SERIAL PRIMARY KEY,
-  order_uid text NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE,
-  transaction TEXT,
-  request_id TEXT,
-  currency TEXT,
-  provider TEXT,
-  amount INTEGER,
-  payment_dt BIGINT,
-  bank TEXT,
-  delivery_cost INTEGER,
-  goods_total INTEGER,
-  custom_fee INTEGER
+CREATE TABLE payments (
+    transaction      TEXT PRIMARY KEY,
+    request_id       TEXT,
+    currency         VARCHAR(10),
+    provider         TEXT,
+    amount           INT,
+    payment_dt       BIGINT,
+    bank             TEXT,
+    delivery_cost    INT,
+    goods_total      INT,
+    custom_fee       INT,
+    order_uid        TEXT NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS items (
-   id SERIAL PRIMARY KEY,
-   order_uid text NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE,
-   chrt_id BIGINT,
-   track_number TEXT,
-   price INTEGER,
-   rid TEXT,
-   name TEXT,
-   sale INTEGER,
-   size TEXT,
-   total_price INTEGER,
-   nm_id BIGINT,
-   brand TEXT,
-   status INTEGER
+CREATE TABLE items (
+    id SERIAL PRIMARY KEY,
+    chrt_id BIGINT NOT NULL,
+    track_number TEXT NOT NULL,
+    price INT NOT NULL,
+    rid TEXT NOT NULL,
+    name TEXT NOT NULL,
+    sale INT NOT NULL,
+    size TEXT NOT NULL,
+    total_price INT NOT NULL,
+    nm_id BIGINT NOT NULL,
+    brand TEXT NOT NULL,
+    status INT NOT NULL,
+    order_uid TEXT NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS order_metadata (
