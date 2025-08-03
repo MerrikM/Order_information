@@ -1,11 +1,14 @@
 CREATE TABLE IF NOT EXISTS orders (
-    order_uid text PRIMARY KEY,
+    order_uid TEXT PRIMARY KEY,
     track_number TEXT NOT NULL,
     entry TEXT NOT NULL,
-    date_created TIMESTAMP NOT NULL,
+    locale TEXT,
+    internal_signature TEXT,
+    customer_id TEXT,
     delivery_service TEXT,
     shardkey TEXT,
     sm_id INTEGER,
+    date_created TIMESTAMP NOT NULL,
     oof_shard TEXT
 );
 
@@ -36,8 +39,7 @@ CREATE TABLE payments (
 );
 
 CREATE TABLE items (
-    id SERIAL PRIMARY KEY,
-    chrt_id BIGINT NOT NULL,
+    chrt_id SERIAL PRIMARY KEY,
     track_number TEXT NOT NULL,
     price INT NOT NULL,
     rid TEXT NOT NULL,

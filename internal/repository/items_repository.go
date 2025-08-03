@@ -5,8 +5,6 @@ import (
 	"Order_information/internal/model"
 	"Order_information/util"
 	"context"
-	"database/sql"
-	"errors"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,19 +16,16 @@ func NewItemsRepository(database *config.Database) *ItemsRepository {
 	return &ItemsRepository{database}
 }
 
-func (repo *ItemsRepository) GetItemById(ctx context.Context, id string) (*model.Item, error) {
-	query := `SELECT * FROM items WHERE chrt_id=$1`
+func (repo *ItemsRepository) GetItemsByOrderUID(ctx context.Context, exec sqlx.ExtContext, orderUID string) ([]model.Item, error) {
+	query := `SELECT * FROM items WHERE order_uid=$1`
 
-	var returnedItem model.Item
-	err := repo.GetContext(ctx, &returnedItem, query, id)
+	var items []model.Item
+	err := sqlx.SelectContext(ctx, exec, &items, query, orderUID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, util.LogError("не удалось вставить данные в таблицу", err)
-		}
-		return nil, util.LogError("ошибка получения таблицы", err)
+		return nil, util.LogError("ошибка при получении таблицы товаров", err)
 	}
 
-	return &returnedItem, nil
+	return items, nil
 }
 
 func (repo *ItemsRepository) SaveItem(ctx context.Context, exec sqlx.ExtContext, item *model.Item) error {

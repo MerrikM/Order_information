@@ -3,22 +3,24 @@ package model
 import "time"
 
 type FullOrder struct {
-	Order         *Order         `json:"order,omitempty"`
-	Delivery      *Delivery      `json:"delivery,omitempty"`
-	Payment       *Payment       `json:"payment,omitempty"`
-	Items         []Item         `json:"items,omitempty"`
-	OrderMetadata *OrderMetadata `json:"order_metadata,omitempty"`
+	Order    *Order    `json:"order,omitempty"`
+	Delivery *Delivery `json:"delivery,omitempty"`
+	Payment  *Payment  `json:"payment,omitempty"`
+	Items    []Item    `json:"items,omitempty"`
 }
 
 type Order struct {
-	OrderUID        string    `db:"order_uid" json:"order_uid"`
-	TrackNumber     string    `db:"track_number" json:"track_number"`
-	Entry           string    `db:"entry" json:"entry"`
-	DateCreated     time.Time `db:"date_created" json:"date_created"`
-	DeliveryService string    `db:"delivery_service" json:"delivery_service"`
-	ShardKey        string    `db:"shardkey" json:"shardkey"`
-	SmID            int       `db:"sm_id" json:"sm_id"`
-	OofShard        string    `db:"oof_shard" json:"oof_shard"`
+	OrderUID          string    `db:"order_uid" json:"order_uid"`
+	TrackNumber       string    `db:"track_number" json:"track_number"`
+	Entry             string    `db:"entry" json:"entry"`
+	Locale            string    `db:"locale" json:"locale"`
+	InternalSignature string    `db:"internal_signature" json:"internal_signature"`
+	CustomerID        string    `db:"customer_id" json:"customer_id"`
+	DeliveryService   string    `db:"delivery_service" json:"delivery_service"`
+	ShardKey          string    `db:"shardkey" json:"shardkey"`
+	SmID              int       `db:"sm_id" json:"sm_id"`
+	DateCreated       time.Time `db:"date_created" json:"date_created"`
+	OofShard          string    `db:"oof_shard" json:"oof_shard"`
 }
 
 type Delivery struct {
@@ -60,11 +62,4 @@ type Item struct {
 	Brand       string `db:"brand" json:"brand"`
 	Status      int    `db:"status" json:"status"`
 	OrderUID    string `db:"order_uid" json:"-"`
-}
-
-type OrderMetadata struct {
-	OrderUID          string `db:"order_uid" json:"order_uid"`
-	Locale            string `db:"locale" json:"locale"`
-	InternalSignature string `db:"internal_signature" json:"internal_signature"`
-	CustomerID        string `db:"customer_id" json:"customer_id"`
 }
