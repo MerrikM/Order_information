@@ -52,10 +52,3 @@ CREATE TABLE items (
     status INT NOT NULL,
     order_uid TEXT NOT NULL REFERENCES orders(order_uid) ON DELETE CASCADE
 );
-
-CREATE TABLE IF NOT EXISTS order_metadata (
-    order_uid text PRIMARY KEY REFERENCES orders(order_uid) ON DELETE CASCADE,
-    locale TEXT,
-    internal_signature TEXT,
-    customer_id TEXT
-);
