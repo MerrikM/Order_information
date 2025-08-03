@@ -60,6 +60,10 @@ func (repo *CacheRepository) DeleteOrder(ctx context.Context, uuid string) error
 	return nil
 }
 
+func (repo *CacheRepository) Pipeline() redis.Pipeliner {
+	return repo.client.Client.Pipeline()
+}
+
 func (repo *CacheRepository) key(uuid string) string {
 	return fmt.Sprintf("order:%s", uuid)
 }

@@ -74,6 +74,57 @@ func (repo *OrderRepository) GetFullOrderByUUIDTx(ctx context.Context, orderUID 
 	return &fullOrder, nil
 }
 
+func (repo *OrderRepository) GetAllOrders(ctx context.Context) ([]model.FullOrder, error) {
+	var orders []*model.Order
+	orderQuery := `SELECT * FROM orders`
+	if err := repo.SelectContext(ctx, &orders, orderQuery); err != nil {
+		return nil, fmt.Errorf("ошибка при получении заказов: %w", err)
+	}
+
+	var deliveries []*model.Delivery
+	deliveryQuery := `SELECT * FROM deliveries`
+	if err := repo.SelectContext(ctx, &deliveries, deliveryQuery); err != nil {
+		return nil, fmt.Errorf("ошибка при получении доставок: %w", err)
+	}
+	deliveryMap := make(map[string]*model.Delivery)
+	for _, d := range deliveries {
+		deliveryMap[d.OrderUID] = d
+	}
+
+	var payments []*model.Payment
+	paymentQuery := `SELECT * FROM payments`
+	if err := repo.SelectContext(ctx, &payments, paymentQuery); err != nil {
+		return nil, fmt.Errorf("ошибка при получении оплат: %w", err)
+	}
+	paymentMap := make(map[string]*model.Payment)
+	for _, p := range payments {
+		paymentMap[p.OrderUID] = p
+	}
+
+	var items []*model.Item
+	itemsQuery := `SELECT * FROM items`
+	if err := repo.SelectContext(ctx, &items, itemsQuery); err != nil {
+		return nil, fmt.Errorf("ошибка при получении items: %w", err)
+	}
+	itemsMap := make(map[string][]model.Item)
+	for _, item := range items {
+		itemsMap[item.OrderUID] = append(itemsMap[item.OrderUID], *item)
+	}
+
+	var fullOrders []model.FullOrder
+	for _, order := range orders {
+		full := model.FullOrder{
+			Order:    order,
+			Delivery: deliveryMap[order.OrderUID],
+			Payment:  paymentMap[order.OrderUID],
+			Items:    itemsMap[order.OrderUID],
+		}
+		fullOrders = append(fullOrders, full)
+	}
+
+	return fullOrders, nil
+}
+
 func (repo *OrderRepository) SaveFullOrderTx(ctx context.Context, order *model.FullOrder) error {
 	transaction, err := repo.BeginTxx(ctx, nil)
 	if err != nil {
