@@ -27,7 +27,7 @@ func (repo *CacheRepository) SetOrder(ctx context.Context, order *model.FullOrde
 		return util.LogError("ошибка сериализации заказа", err)
 	}
 
-	cmd := repo.client.Client.Set(ctx, repo.key(order.Order.OrderUID), data, repo.ttl)
+	cmd := repo.client.Client.Set(ctx, repo.key(order.OrderUID), data, repo.ttl)
 	if err = cmd.Err(); err != nil {
 		return util.LogError("ошибка сохранения в Redis", err)
 	}

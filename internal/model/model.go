@@ -3,10 +3,20 @@ package model
 import "time"
 
 type FullOrder struct {
-	Order    *Order    `json:"order,omitempty"`
-	Delivery *Delivery `json:"delivery,omitempty"`
-	Payment  *Payment  `json:"payment,omitempty"`
-	Items    []Item    `json:"items,omitempty"`
+	OrderUID          string    `db:"order_uid" json:"order_uid"`
+	TrackNumber       string    `db:"track_number" json:"track_number"`
+	Entry             string    `db:"entry" json:"entry"`
+	Locale            string    `db:"locale" json:"locale"`
+	InternalSignature string    `db:"internal_signature" json:"internal_signature"`
+	CustomerID        string    `db:"customer_id" json:"customer_id"`
+	DeliveryService   string    `db:"delivery_service" json:"delivery_service"`
+	ShardKey          string    `db:"shardkey" json:"shardkey"`
+	SmID              int       `db:"sm_id" json:"sm_id"`
+	DateCreated       time.Time `db:"date_created" json:"date_created"`
+	OofShard          string    `db:"oof_shard" json:"oof_shard"`
+	Delivery          *Delivery `json:"delivery,omitempty"`
+	Payment           *Payment  `json:"payment,omitempty"`
+	Items             []Item    `json:"items,omitempty"`
 }
 
 type Order struct {

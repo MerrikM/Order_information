@@ -28,7 +28,7 @@ func (repo *ItemsRepository) GetItemsByOrderUID(ctx context.Context, exec sqlx.E
 	return items, nil
 }
 
-func (repo *ItemsRepository) SaveItem(ctx context.Context, exec sqlx.ExtContext, item *model.Item) error {
+func (repo *ItemsRepository) SaveItem(ctx context.Context, exec sqlx.ExtContext, item *model.Item, orderUID string) error {
 	query := `INSERT INTO items 
     (chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status, order_uid) 
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
@@ -47,7 +47,7 @@ func (repo *ItemsRepository) SaveItem(ctx context.Context, exec sqlx.ExtContext,
 		item.NmID,
 		item.Brand,
 		item.Status,
-		item.OrderUID,
+		orderUID,
 	)
 
 	if err != nil {
@@ -57,9 +57,9 @@ func (repo *ItemsRepository) SaveItem(ctx context.Context, exec sqlx.ExtContext,
 	return nil
 }
 
-func (repo *ItemsRepository) SaveItems(ctx context.Context, exec sqlx.ExtContext, items []model.Item) error {
+func (repo *ItemsRepository) SaveItems(ctx context.Context, exec sqlx.ExtContext, items []model.Item, orderUID string) error {
 	for _, item := range items {
-		if err := repo.SaveItem(ctx, exec, &item); err != nil {
+		if err := repo.SaveItem(ctx, exec, &item, orderUID); err != nil {
 			return err
 		}
 	}

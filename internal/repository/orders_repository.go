@@ -40,11 +40,10 @@ func (repo *OrderRepository) GetFullOrderByUUIDTx(ctx context.Context, orderUID 
 
 	var fullOrder model.FullOrder
 
-	order, err := repo.GetOrderByUUID(ctx, transaction, orderUID)
+	_, err = repo.GetOrderByUUID(ctx, transaction, orderUID)
 	if err != nil {
 		return nil, err
 	}
-	fullOrder.Order = order
 
 	deliveryRepo := DeliveryRepository{Database: repo.Database}
 	delivery, err := deliveryRepo.GetDeliveryByOrderUID(ctx, transaction, orderUID)
@@ -114,10 +113,20 @@ func (repo *OrderRepository) GetAllOrders(ctx context.Context) ([]model.FullOrde
 	var fullOrders []model.FullOrder
 	for _, order := range orders {
 		full := model.FullOrder{
-			Order:    order,
-			Delivery: deliveryMap[order.OrderUID],
-			Payment:  paymentMap[order.OrderUID],
-			Items:    itemsMap[order.OrderUID],
+			OrderUID:          order.OrderUID,
+			TrackNumber:       order.TrackNumber,
+			Entry:             order.Entry,
+			Locale:            order.Locale,
+			InternalSignature: order.InternalSignature,
+			CustomerID:        order.CustomerID,
+			DeliveryService:   order.DeliveryService,
+			ShardKey:          order.ShardKey,
+			SmID:              order.SmID,
+			DateCreated:       order.DateCreated,
+			OofShard:          order.OofShard,
+			Delivery:          deliveryMap[order.OrderUID],
+			Payment:           paymentMap[order.OrderUID],
+			Items:             itemsMap[order.OrderUID],
 		}
 		fullOrders = append(fullOrders, full)
 	}
@@ -125,7 +134,7 @@ func (repo *OrderRepository) GetAllOrders(ctx context.Context) ([]model.FullOrde
 	return fullOrders, nil
 }
 
-func (repo *OrderRepository) SaveFullOrderTx(ctx context.Context, order *model.FullOrder) error {
+func (repo *OrderRepository) SaveFullOrderTx(ctx context.Context, order *model.Order, fullOrder *model.FullOrder) error {
 	transaction, err := repo.BeginTxx(ctx, nil)
 	if err != nil {
 		return util.LogError("не удалось начать транзакцию", err)
@@ -137,29 +146,29 @@ func (repo *OrderRepository) SaveFullOrderTx(ctx context.Context, order *model.F
 		}
 	}()
 
-	if err := repo.saveOrder(ctx, transaction, order.Order); err != nil {
+	if err := repo.saveOrder(ctx, transaction, order); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для заказа", err)
 	}
-	if err := repo.deliveryRepo.SaveDelivery(ctx, transaction, order.Delivery); err != nil {
+	if err := repo.deliveryRepo.SaveDelivery(ctx, transaction, fullOrder.Delivery); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для доставки", err)
 	}
-	if err := repo.paymentRepo.SavePayment(ctx, transaction, order.Payment); err != nil {
+	if err := repo.paymentRepo.SavePayment(ctx, transaction, fullOrder.Payment, order.OrderUID); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для оплаты", err)
 	}
-	if err := repo.itemsRepo.SaveItems(ctx, transaction, order.Items); err != nil {
+	if err := repo.itemsRepo.SaveItems(ctx, transaction, fullOrder.Items, order.OrderUID); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для товара(ов)", err)
 	}
 
-	log.Printf("заказ от %s с uuid=%s успешно сохранен", order.Order.DateCreated, order.Order.OrderUID)
+	log.Printf("заказ от %s с uuid=%s успешно сохранен", order.DateCreated, order.OrderUID)
 
 	return transaction.Commit()
 }
 
-func (repo *OrderRepository) UpdateFullOrderTx(ctx context.Context, order *model.FullOrder) error {
+func (repo *OrderRepository) UpdateFullOrderTx(ctx context.Context, order *model.Order, fullOrder *model.FullOrder) error {
 	transaction, err := repo.BeginTxx(ctx, nil)
 	if err != nil {
 		return util.LogError("не удалось начать транзакцию", err)
@@ -171,20 +180,20 @@ func (repo *OrderRepository) UpdateFullOrderTx(ctx context.Context, order *model
 		}
 	}()
 
-	if err := repo.updateOrder(ctx, transaction, order.Order); err != nil {
+	if err := repo.updateOrder(ctx, transaction, order); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для заказа", err)
 	}
-	if err := repo.deliveryRepo.UpdateDelivery(ctx, transaction, order.Delivery); err != nil {
+	if err := repo.deliveryRepo.UpdateDelivery(ctx, transaction, fullOrder.Delivery); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для доставки", err)
 	}
-	if err := repo.paymentRepo.UpdatePayment(ctx, transaction, order.Payment); err != nil {
+	if err := repo.paymentRepo.UpdatePayment(ctx, transaction, fullOrder.Payment); err != nil {
 		transaction.Rollback()
 		return util.LogError("не удалось выполнить транзакцию для оплаты", err)
 	}
 
-	log.Printf("заказ от %s с uuid=%s успешно обновлен", order.Order.DateCreated, order.Order.OrderUID)
+	log.Printf("заказ от %s с uuid=%s успешно обновлен", order.DateCreated, order.OrderUID)
 
 	return transaction.Commit()
 }
@@ -225,6 +234,17 @@ func (repo *OrderRepository) GetOrderByUUID(ctx context.Context, exec sqlx.ExtCo
 	}
 
 	return &returnedOrder, nil
+}
+
+func (repo *OrderRepository) Exists(orderUID string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS (SELECT 1 FROM orders WHERE order_uid = $1)`
+
+	err := repo.Get(&exists, query, orderUID)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
 }
 
 func (repo *OrderRepository) saveOrder(ctx context.Context, exec sqlx.ExtContext, order *model.Order) error {

@@ -34,7 +34,7 @@ func (repo *PaymentRepository) GetPaymentByOrderUID(ctx context.Context, exec sq
 	return &returnedPayment, nil
 }
 
-func (repo *PaymentRepository) SavePayment(ctx context.Context, exec sqlx.ExtContext, payment *model.Payment) error {
+func (repo *PaymentRepository) SavePayment(ctx context.Context, exec sqlx.ExtContext, payment *model.Payment, orderUID string) error {
 	query := `INSERT INTO payments 
     (transaction, request_id, currency, provider, amount, payment_dt, bank, delivery_cost, goods_total, custom_fee, order_uid) 
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -52,7 +52,7 @@ func (repo *PaymentRepository) SavePayment(ctx context.Context, exec sqlx.ExtCon
 		payment.DeliveryCost,
 		payment.GoodsTotal,
 		payment.CustomFee,
-		payment.OrderUID,
+		orderUID,
 	)
 
 	if err != nil {
