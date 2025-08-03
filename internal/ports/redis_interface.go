@@ -1,12 +1,12 @@
 package ports
 
 import (
+	"Order_information/internal/model"
 	"context"
-	"time"
 )
 
 type Cache interface {
-	Set(ctx context.Context, key string, value interface{}, expiration time.Duration) error
-	Get(ctx context.Context, key string) (string, error)
-	Del(ctx context.Context, keys ...string) error
+	SetOrder(ctx context.Context, order *model.FullOrder) error
+	GetOrder(ctx context.Context, uuid string) (*model.FullOrder, error)
+	DeleteOrder(ctx context.Context, uuid string) error
 }
