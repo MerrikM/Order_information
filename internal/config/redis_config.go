@@ -8,20 +8,20 @@ import (
 )
 
 type RedisConfig struct {
-	Address  string
-	Password string
-	DB       int
+	Address  string `yaml:"address"`
+	Password string `yaml:"password"`
+	Database int    `yaml:"database"`
 }
 
 type RedisClient struct {
 	Client *redis.Client
 }
 
-func (r *RedisConfig) NewRedisClient() (*RedisClient, error) {
+func NewRedisClient(cfg *RedisConfig) (*RedisClient, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     r.Address,
-		Password: r.Password,
-		DB:       r.DB,
+		Addr:     cfg.Address,
+		Password: cfg.Password,
+		DB:       cfg.Database,
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

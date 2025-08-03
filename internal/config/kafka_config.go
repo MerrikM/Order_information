@@ -1,57 +1,62 @@
 package config
 
 import (
-	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
+	"log"
 )
 
 type KafkaConfig struct {
-	Brokers string
-	GroupID string
-	Topic   string
+	Consumer KafkaConsumerConfig `yaml:"consumer"`
+	Producer KafkaProducerConfig `yaml:"producer"`
+}
+
+type KafkaConsumerConfig struct {
+	Brokers []string `yaml:"brokers"`
+	GroupID string   `yaml:"groupID"`
+	Topic   string   `yaml:"topic"`
+}
+
+type KafkaProducerConfig struct {
+	Brokers []string `yaml:"brokers"`
+	Topic   string   `yaml:"topic"`
 }
 
 type Producer struct {
-	Client *kafka.Producer
-	Topic  string
+	Writer *kafka.Writer
 }
 
 type Consumer struct {
-	Client *kafka.Consumer
-	Topic  string
+	Reader *kafka.Reader
 }
 
-func NewProducer(brokers, topic string) (*Producer, error) {
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": brokers,
+func NewProducer(brokers []string, topic string) (*Producer, error) {
+	writer := &kafka.Writer{
+		Addr:     kafka.TCP(brokers...),
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
+	}
+
+	log.Printf("Kafka producer создан для топика: %s (%v)", topic, brokers)
+	return &Producer{Writer: writer}, nil
+}
+
+func (p *Producer) Close() error {
+	return p.Writer.Close()
+}
+
+func NewConsumer(brokers []string, groupID, topic string) (*Consumer, error) {
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers:  brokers,
+		GroupID:  groupID,
+		Topic:    topic,
+		MinBytes: 1,    // минимальный размер для чтения (1 байт)
+		MaxBytes: 10e6, // максимальный размер сообщения (10MB)
 	})
-	if err != nil {
-		return nil, fmt.Errorf("ошибка создания продюсера: %w", err)
-	}
-	return &Producer{Client: p, Topic: topic}, nil
-}
 
-func (p *Producer) Close() {
-	p.Client.Flush(10000)
-	p.Client.Close()
-}
-
-func NewConsumer(brokers, groupID, topic string) (*Consumer, error) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": brokers,
-		"group.id":          groupID,
-		"auto.offset.reset": "earliest",
-	})
-	if err != nil {
-		return nil, fmt.Errorf("ошибка создания консьюмера: %w", err)
-	}
-	if err := c.Subscribe(topic, nil); err != nil {
-		return nil, fmt.Errorf("ошибка подписки консьюмера на топик: %w", err)
-	}
-
-	return &Consumer{Client: c, Topic: topic}, nil
+	log.Printf("Kafka consumer подключен к топику: %s с groupID: %s (%v)", topic, groupID, brokers)
+	return &Consumer{Reader: reader}, nil
 }
 
 func (c *Consumer) Close() error {
-	return c.Client.Close()
+	return c.Reader.Close()
 }

@@ -11,7 +11,11 @@ type Database struct {
 	*sqlx.DB
 }
 
-func (d *Database) NewDatabaseConnection(dbDriverName, connectionString string) (*Database, error) {
+type DatabaseConfig struct {
+	DSN string `yaml:"dsn"`
+}
+
+func NewDatabaseConnection(dbDriverName, connectionString string) (*Database, error) {
 	database, err := sqlx.Connect(dbDriverName, connectionString)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка подключения к БД: %w", err)

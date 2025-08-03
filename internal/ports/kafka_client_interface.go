@@ -1,11 +1,14 @@
 package ports
 
-import "context"
+import (
+	"context"
+	"github.com/segmentio/kafka-go"
+)
 
 type KafkaProducer interface {
-	ProduceMessage(topic string, message []byte) error
+	ProduceMessage(ctx context.Context, topic string, key, value []byte) error
 }
 
 type KafkaConsumer interface {
-	ConsumeMessages(ctx context.Context, handler func(msg []byte) error) error
+	ConsumeMessages(ctx context.Context, handler func(msg kafka.Message) error) error
 }

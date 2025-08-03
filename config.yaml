@@ -1,0 +1,21 @@
+databaseConfig:
+  dsn: "postgresql://user:password@localhost:5432/postgres?sslmode=disable"
+
+redisConfig:
+  address: "localhost:6379"
+  password: ""
+  database: 0
+
+serverAddr: ":8080"
+
+kafka:
+  consumer:
+    brokers:
+      - "localhost:9092"
+    groupID: "order-consumer-group"
+    topic: "orders"
+
+  producer:
+    brokers:
+      - "localhost:9092"
+    topic: "order-responses"
