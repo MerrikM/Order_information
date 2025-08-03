@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/segmentio/kafka-go"
+	"io"
 	"log"
 	"time"
 )
@@ -46,26 +47,24 @@ func (service *KafkaService) ConsumeMessages(ctx context.Context, handler func(m
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil
 		default:
-		}
-
-		msg, err := service.consumer.Reader.ReadMessage(ctx)
-		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return err
+			msg, err := service.consumer.Reader.ReadMessage(ctx)
+			if err != nil {
+				if errors.Is(err, context.Canceled) || errors.Is(err, io.EOF) {
+					return nil
+				}
+				log.Printf("ошибка чтения сообщения из Kafka: %v\n", err)
+				continue
 			}
-			log.Printf("ошибка чтения сообщения из Kafka: %v\n", err)
-			continue
-		}
 
-		retryErr := retry(ctx, 3, time.Second, func() error {
-			return handler(msg)
-		})
+			retryErr := retry(ctx, 3, time.Second, func() error {
+				return handler(msg)
+			})
 
-		if retryErr != nil {
-			log.Printf("ошибка после всех попыток обработки сообщения: %v\n", retryErr)
-			continue
+			if retryErr != nil {
+				log.Printf("ошибка после всех попыток обработки сообщения: %v\n", retryErr)
+			}
 		}
 	}
 }
@@ -90,6 +89,18 @@ func retry(ctx context.Context, attempts int, delay time.Duration, fn func() err
 			continue
 		}
 		return nil
+	}
+	return nil
+}
+
+func (service *KafkaService) Close() error {
+	if service.consumer != nil {
+		if err := service.consumer.Close(); err != nil {
+			return fmt.Errorf("ошибка закрытия consumer: %w", err)
+		}
+	}
+	if service.producer != nil {
+		service.producer.Close()
 	}
 	return nil
 }
