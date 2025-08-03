@@ -98,7 +98,7 @@ func (s *OrderService) PreloadCache(ctx context.Context) error {
 			log.Printf("не удалось сериализовать заказ с uuid: %s: %v", order.OrderUID, err)
 			continue
 		}
-		pipe.Set(ctx, "order:"+order.OrderUID, value, 0)
+		pipe.Set(ctx, "order:"+order.OrderUID, value, 15*time.Minute)
 	}
 
 	_, err = pipe.Exec(ctx)
