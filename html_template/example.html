@@ -1,63 +1,192 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>Поиск заказа</title>
+    <title>Order Search</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+        }
+        .input-container {
+            margin-bottom: 1rem;
         }
         input {
             padding: 0.5rem;
             font-size: 1rem;
+            width: 300px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
         button {
             padding: 0.5rem 1rem;
             font-size: 1rem;
             margin-left: 0.5rem;
-        }
-        pre {
-            margin-top: 1rem;
-            background-color: #f4f4f4;
-            padding: 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
             border-radius: 4px;
-            max-width: 700px;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .error {
+            color: red;
+        }
+        .order-section {
+            margin-bottom: 1.5rem;
+        }
+        .order-section h2 {
+            font-size: 1.2rem;
+            color: #007bff;
+            margin-bottom: 0.5rem;
+        }
+        .order-section p {
+            margin: 0.3rem 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.5rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
         }
     </style>
 </head>
 <body>
-<h1>Поиск заказа по UID</h1>
-<input type="text" id="orderUID" placeholder="Введите Order UID" />
-<button onclick="fetchOrder()">Найти</button>
-
-<pre id="result"></pre>
+<h1>Search Order by UID</h1>
+<div class="input-container">
+    <input type="text" id="orderUID" placeholder="order_uid" />
+    <button onclick="fetchOrder()">Search</button>
+</div>
+<div id="result"></div>
 
 <script>
     async function fetchOrder() {
-        const order_uid = document.getElementById("orderUID").value.trim();
+        const orderUID = document.getElementById("orderUID").value.trim();
         const resultEl = document.getElementById("result");
-        resultEl.textContent = "";
+        resultEl.innerHTML = "";
 
-        if (!order_uid) {
-            resultEl.textContent = "Пожалуйста, введите Order UID.";
+        if (!orderUID) {
+            resultEl.innerHTML = '<p class="error">Отсутствует order_uid.</p>';
             return;
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/order/${order_uid}`);
+            const response = await fetch(`http://localhost:8080/order/${orderUID}`);
             if (!response.ok) {
                 const text = await response.text();
-                throw new Error(`Ошибка ${response.status}: ${text}`);
+                if (response.status === 404) {
+                    throw new Error("Заказ не найден");
+                } else if (response.status === 400) {
+                    throw new Error("Неверный order_uid");
+                } else {
+                    throw new Error(`Server error: ${text}`);
+                }
             }
 
             const data = await response.json();
-            resultEl.textContent = JSON.stringify(data, null, 2);
+            renderOrder(data, resultEl);
         } catch (err) {
-            resultEl.textContent = "Ошибка при запросе: " + err.message;
+            resultEl.innerHTML = `<p class="error">Error: ${err.message}</p>`;
         }
+    }
+
+    function renderOrder(order, element) {
+        const date = new Date(order.date_created).toLocaleString('en-US');
+        let html = `
+                <div class="order-section">
+                    <h2>Order Information</h2>
+                    <p><strong>order_uid:</strong> ${order.order_uid}</p>
+                    <p><strong>track_number:</strong> ${order.track_number}</p>
+                    <p><strong>entry:</strong> ${order.entry}</p>
+                    <p><strong>locale:</strong> ${order.locale}</p>
+                    <p><strong>customer_id:</strong> ${order.customer_id}</p>
+                    <p><strong>delivery_service:</strong> ${order.delivery_service}</p>
+                    <p><strong>shardkey:</strong> ${order.shardkey}</p>
+                    <p><strong>sm_id:</strong> ${order.sm_id}</p>
+                    <p><strong>oof_shard:</strong> ${order.oof_shard}</p>
+                    <p><strong>date_created:</strong> ${date}</p>
+                </div>
+                <div class="order-section">
+                    <h2>Delivery Information</h2>
+                    <p><strong>name:</strong> ${order.delivery.name}</p>
+                    <p><strong>phone:</strong> ${order.delivery.phone}</p>
+                    <p><strong>zip:</strong> ${order.delivery.zip}</p>
+                    <p><strong>city:</strong> ${order.delivery.city}</p>
+                    <p><strong>address:</strong> ${order.delivery.address}</p>
+                    <p><strong>region:</strong> ${order.delivery.region}</p>
+                    <p><strong>email:</strong> ${order.delivery.email}</p>
+                </div>
+                <div class="order-section">
+                    <h2>Payment Information</h2>
+                    <p><strong>transaction:</strong> ${order.payment.transaction}</p>
+                    <p><strong>request_id:</strong> ${order.payment.request_id || '-'}</p>
+                    <p><strong>currency:</strong> ${order.payment.currency}</p>
+                    <p><strong>provider:</strong> ${order.payment.provider}</p>
+                    <p><strong>amount:</strong> ${order.payment.amount} ${order.payment.currency}</p>
+                    <p><strong>payment_dt:</strong> ${new Date(order.payment.payment_dt * 1000).toLocaleString('en-US')}</p>
+                    <p><strong>bank:</strong> ${order.payment.bank}</p>
+                    <p><strong>delivery_cost:</strong> ${order.payment.delivery_cost} ${order.payment.currency}</p>
+                    <p><strong>goods_total:</strong> ${order.payment.goods_total} ${order.payment.currency}</p>
+                    <p><strong>custom_fee:</strong> ${order.payment.custom_fee} ${order.payment.currency}</p>
+                </div>
+                <div class="order-section">
+                    <h2>Items</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>name</th>
+                                <th>price</th>
+                                <th>sale</th>
+                                <th>total_price</th>
+                                <th>brand</th>
+                                <th>status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+        order.items.forEach(item => {
+            html += `
+                    <tr>
+                        <td>${item.name}</td>
+                        <td>${item.price}</td>
+                        <td>${item.sale}</td>
+                        <td>${item.total_price}</td>
+                        <td>${item.brand}</td>
+                        <td>${item.status}</td>
+                    </tr>
+                `;
+        });
+        html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        element.innerHTML = html;
     }
 </script>
 </body>
