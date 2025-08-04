@@ -75,7 +75,7 @@ func main() {
 	}()
 
 	restServer, router := config.SetupRestServer(cfg.ServerAddr)
-	router.Get("/order", orderHandler.GetOrderByUUID)
+	router.Get("/order/{order_uid}", orderHandler.GetOrderByUUID)
 
 	runServer(ctx, restServer, orderService.KafkaService, kafkaDone)
 }

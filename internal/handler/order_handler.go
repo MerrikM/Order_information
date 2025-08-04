@@ -3,6 +3,8 @@ package handler
 import (
 	"Order_information/internal/service"
 	"Order_information/util"
+	"errors"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 )
@@ -22,7 +24,7 @@ func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
 func (h *OrderHandler) GetOrderByUUID(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	orderUID := request.URL.Query().Get("order_uid")
+	orderUID := chi.URLParam(request, "order_uid")
 	if orderUID == "" {
 		util.RespondWithError(writer, http.StatusBadRequest, "параметр order_uid обязателен")
 		return
@@ -30,13 +32,13 @@ func (h *OrderHandler) GetOrderByUUID(writer http.ResponseWriter, request *http.
 
 	order, err := h.orderService.GetOrderByUUID(ctx, orderUID)
 	if err != nil {
-		log.Printf("ошибка получения заказа: %v", err)
+		if errors.Is(err, service.ErrOrderNotFound) {
+			log.Println(err)
+			util.RespondWithError(writer, http.StatusNotFound, "не удалось найти заказ")
+			return
+		}
+		log.Println(err)
 		util.RespondWithError(writer, http.StatusInternalServerError, "ошибка получения заказа")
-		return
-	}
-	if order == nil {
-		log.Printf("заказ не найден: %v", order)
-		util.RespondWithError(writer, http.StatusNotFound, "заказ не найден")
 		return
 	}
 

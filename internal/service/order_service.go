@@ -5,7 +5,9 @@ import (
 	"Order_information/internal/repository"
 	"Order_information/util"
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/segmentio/kafka-go"
 	"log"
@@ -24,6 +26,8 @@ type KafkaResponseEvent struct {
 	Error     string `json:"error"`     // сообщение об ошибке (если есть)
 	Timestamp string `json:"timestamp"` // для отладки
 }
+
+var ErrOrderNotFound = errors.New("не удалось найти заказ")
 
 func NewOrderService(cacheRepository *repository.CacheRepository, orderRepository *repository.OrderRepository, kafkaService *KafkaService) *OrderService {
 	return &OrderService{
@@ -46,6 +50,10 @@ func (s *OrderService) GetOrderByUUID(ctx context.Context, uuid string) (*model.
 
 	order, err = s.orderRepository.GetFullOrderByUUIDTx(ctx, uuid)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			util.LogError("не удалось найти заказ", err)
+			return nil, ErrOrderNotFound
+		}
 		return nil, util.LogError("ошибка обращения к таблице заказа", err)
 	}
 

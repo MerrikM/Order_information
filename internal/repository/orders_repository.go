@@ -228,7 +228,7 @@ func (repo *OrderRepository) GetOrderByUUID(ctx context.Context, exec sqlx.ExtCo
 	err := sqlx.GetContext(ctx, exec, &returnedOrder, query, uuid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, util.LogError("не удалось вставить данные в таблицу", err)
+			return nil, util.LogError("не удалось найти заказ", err)
 		}
 		return nil, util.LogError("ошибка получения таблицы заказов", err)
 	}

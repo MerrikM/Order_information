@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 	"gopkg.in/yaml.v3"
 	"net/http"
 	"os"
@@ -38,6 +39,15 @@ func SetupRedis(cfg *RedisConfig) (*RedisClient, error) {
 
 func SetupRestServer(addr string) (*http.Server, *chi.Mux) {
 	router := chi.NewRouter()
+
+	router.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:63342"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	server := &http.Server{
 		Addr:    addr,
