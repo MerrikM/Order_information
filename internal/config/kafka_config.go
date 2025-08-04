@@ -32,7 +32,6 @@ type Consumer struct {
 func NewProducer(brokers []string, topic string) (*Producer, error) {
 	writer := &kafka.Writer{
 		Addr:     kafka.TCP(brokers...),
-		Topic:    topic,
 		Balancer: &kafka.LeastBytes{},
 	}
 
