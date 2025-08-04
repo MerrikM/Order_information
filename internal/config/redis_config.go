@@ -11,6 +11,7 @@ type RedisConfig struct {
 	Address  string `yaml:"address"`
 	Password string `yaml:"password"`
 	Database int    `yaml:"database"`
+	TTL      int    `yaml:"ttl"`
 }
 
 type RedisClient struct {

@@ -55,9 +55,9 @@ func main() {
 		log.Fatalf("не удалось создать продюсера: %v", err)
 	}
 
-	orderService := buildOrderService(database, redisClient, kafkaConsumer, kafkaProducer)
+	orderService := buildOrderService(database, redisClient, time.Duration(cfg.RedisConfig.TTL)*time.Second, kafkaConsumer, kafkaProducer)
 
-	if err := orderService.PreloadCache(ctx); err != nil {
+	if err := orderService.PreloadCache(ctx, time.Duration(cfg.RedisConfig.TTL)*time.Second); err != nil {
 		log.Fatalf("ошибка предзагрузки кеша: %v", err)
 	}
 	log.Println("кеш загружен, запускаем сервер")
@@ -86,6 +86,7 @@ func main() {
 func buildOrderService(
 	database *config.Database,
 	redis *config.RedisClient,
+	ttl time.Duration,
 	kafkaConsumer *config.Consumer,
 	kafkaProducer *config.Producer,
 ) *service.OrderService {
@@ -93,7 +94,7 @@ func buildOrderService(
 	itemsRepo := repository.NewItemsRepository(database)
 	paymentRepo := repository.NewPaymentRepository(database)
 	orderRepo := repository.NewOrderRepository(database, deliveryRepo, paymentRepo, itemsRepo)
-	cacheRepo := repository.NewCacheRepository(redis, 15*time.Minute)
+	cacheRepo := repository.NewCacheRepository(redis, ttl)
 	kafkaService := service.NewKafkaService(kafkaProducer, kafkaConsumer)
 
 	return service.NewOrderService(cacheRepo, orderRepo, kafkaService)

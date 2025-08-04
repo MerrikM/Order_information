@@ -92,7 +92,7 @@ func (s *OrderService) DeleteOrderByUUID(ctx context.Context, uuid string) error
 	return nil
 }
 
-func (s *OrderService) PreloadCache(ctx context.Context) error {
+func (s *OrderService) PreloadCache(ctx context.Context, ttl time.Duration) error {
 	orders, err := s.orderRepository.GetAllOrders(ctx)
 	if err != nil {
 		return fmt.Errorf("ошибка при получении заказов из БД: %w", err)
@@ -106,7 +106,7 @@ func (s *OrderService) PreloadCache(ctx context.Context) error {
 			log.Printf("не удалось сериализовать заказ с uuid: %s: %v", order.OrderUID, err)
 			continue
 		}
-		pipe.Set(ctx, "order:"+order.OrderUID, value, 15*time.Minute)
+		pipe.Set(ctx, "order:"+order.OrderUID, value, ttl)
 	}
 
 	_, err = pipe.Exec(ctx)
@@ -250,7 +250,7 @@ func (s *OrderService) HandleKafkaMessage(responseTopic string) func(msg kafka.M
 			return util.LogError("[Kafka][producer] не удалось отправить событие", fmt.Errorf("%s", response))
 		}
 		log.Printf("[Kafka][producer] отправил событие сообщение %v в топик %s", response, responseTopic)
-		
+
 		return nil
 	}
 }
